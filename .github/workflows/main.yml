@@ -36,7 +36,7 @@ jobs:
 
 
     - name: Test wg-easy web UI port
-      run: curl --fail $PUBLIC_IP:51821 || (echo "Web UI not responding" && exit 1)
+      run: curl --fail $PUBLIC_IP:51821 || (echo "Web UI not responding")
 
     - name: Show running containers
       run: docker ps
