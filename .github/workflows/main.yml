@@ -1,25 +1,58 @@
-name: dednoob RDP
+name: WireGuard VPN Test
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [ main ]
 
 jobs:
-  build:
-    runs-on: windows-latest
+  vpn-job:
+    runs-on: ubuntu-latest
 
     steps:
-    - name: Time Counter
-      run: python time.py &
-    - name: Download
-      run: Invoke-WebRequest https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip -OutFile ngrok.zip
-    - name: Extract
-      run: Expand-Archive ngrok.zip
-    - name: Auth
-      run: .\ngrok\ngrok.exe authtoken 2AuSDniLD0HyKWMbc2JmoIoxupL_698BYsaJK2wRVsGya7jX4
-    - name: Enable TS
-      run: Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server'-name "fDenyTSConnections" -Value 0
-    - run: Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-    - run: Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
-    - run: Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "Thanfees12!" -Force)
-    - name: Create Tunnel
-      run: .\ngrok\ngrok.exe tcp 3389
+    - name: Check Public IP
+      run: |
+        sudo apt update
+        sudo apt install -y curl
+        curl ifconfig.me > pulicip.txt
+        curl ifconfig.me
+  
+    - name: Install WireGuard
+      run: |
+        sudo apt update
+        sudo apt install -y wireguard resolvconf
+
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Docker
+      uses: docker/setup-buildx-action@v3
+
+    - name: Run wg-easy container
+      run: |
+        docker volume create etc_wireguard
+        docker run -d \
+          --name wg-easy \
+          --cap-add=NET_ADMIN \
+          --cap-add=SYS_MODULE \
+          --sysctl net.ipv4.ip_forward=1 \
+          --sysctl net.ipv4.conf.all.src_valid_mark=1 \
+          -e LANG=en \
+          -e WG_HOST=127.0.0.1 \
+          -e PASSWORD=SuperSecure123 \
+          -p 51820:51820/udp \
+          -p 51821:51821/tcp \
+          -v etc_wireguard:/etc/wireguard \
+          ghcr.io/wg-easy/wg-easy:14
+
+    - name: Wait for startup
+      run: sleep 15
+
+    - name: Test wg-easy web UI port
+      run: curl --fail http://localhost:51821 || (echo "Web UI not responding" && exit 1)
+
+    - name: Show running containers
+      run: docker ps
+
+    - name: Stop container
+      if: always()
+      run: docker rm -f wg-easy
