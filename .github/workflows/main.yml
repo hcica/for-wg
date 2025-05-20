@@ -13,7 +13,7 @@ jobs:
       run: |
         sudo apt update
         sudo apt install -y curl
-        curl ifconfig.me > pulicip.txt
+        curl ifconfig.me > publicip.txt
         echo "PUBLIC_IP=$(cat publicip.txt)" >> $GITHUB_ENV
         curl ifconfig.me
   
