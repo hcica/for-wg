@@ -9,11 +9,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Check Public IP
+    - name: Check- Public IP
       run: |
         sudo apt update
         sudo apt install -y curl
         curl ifconfig.me > pulicip.txt
+        echo "PUBLIC_IP=$(cat publicip.txt)" >> $GITHUB_ENV
         curl ifconfig.me
   
     - name: Install WireGuard
@@ -29,26 +30,12 @@ jobs:
 
     - name: Run wg-easy container
       run: |
-        docker volume create etc_wireguard
-        docker run -d \
-          --name wg-easy \
-          --cap-add=NET_ADMIN \
-          --cap-add=SYS_MODULE \
-          --sysctl net.ipv4.ip_forward=1 \
-          --sysctl net.ipv4.conf.all.src_valid_mark=1 \
-          -e LANG=en \
-          -e WG_HOST=127.0.0.1 \
-          -e PASSWORD=SuperSecure123 \
-          -p 51820:51820/udp \
-          -p 51821:51821/tcp \
-          -v etc_wireguard:/etc/wireguard \
-          ghcr.io/wg-easy/wg-easy:14
+        curl https://raw.githubusercontent.com/hcica/wg-easy/refs/heads/master/docker-compose.yml -o docker-compose.yml
+        sudo docker compose up -d
 
-    - name: Wait for startup
-      run: sleep 15
 
     - name: Test wg-easy web UI port
-      run: curl --fail http://localhost:51821 || (echo "Web UI not responding" && exit 1)
+      run: curl --fail $PUBLIC_IP:51821 || (echo "Web UI not responding" && exit 1)
 
     - name: Show running containers
       run: docker ps
