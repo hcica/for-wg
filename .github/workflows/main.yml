@@ -41,6 +41,10 @@ jobs:
     - name: Show running containers
       run: docker ps
 
-    - name: Stop container
-      if: always()
-      run: docker rm -f wg-easy
+    - name: Keep the job alive
+      run: |
+        echo "WireGuard is running. Keeping workflow alive..."
+        while true; do
+          sleep 60
+          echo "Still running at $(date)..."
+        done
